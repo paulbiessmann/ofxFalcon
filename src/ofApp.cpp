@@ -30,17 +30,17 @@ void ofApp::setup() {
     gui.add(guiFocal.setup("guiFocal", 0.3, 0.0, 1.0));
     gui.add(guiSaturation.setup("guiSaturation", 0.0, 0.0, 1.0));
 
-    bEdge = false;
+    bEdge = true;
     bZoom = false;
 
-     bFxaa = false;
+     bFxaa = true;
      bBloom = true;
      bDof = true;
      bNoise = false;
      bTilt = false;
      bGod = true;
      bRgb = false;
-     bContrast = false;
+     bContrast = true;
      bSSAO = false;
     
     ofSetCoordHandedness(OF_RIGHT_HANDED);
@@ -48,16 +48,21 @@ void ofApp::setup() {
     // Setup post-processing chain
     post.init(fullWidth, fullHeight);
    // post.createPass<DofPass>()->setEnabled(bDof);
-    post.createPass<ZoomBlurPass>()->setEnabled(bZoom);
     post.createPass<NoiseWarpPass>()->setEnabled(bNoise);
+    post.createPass<EdgePass>()->setEnabled(bEdge);
     post.createPass<DofPass>()->setFocus(0.9999);
     post.createPass<FxaaPass>()->setEnabled(bFxaa);
     post.createPass<BloomPass>()->setEnabled(bBloom);
     post.createPass<GodRaysPass>()->setEnabled(bGod);
-    post.createPass<SSAOPass>()->setEnabled(bSSAO);
+//    post.createPass<SSAOPass>()->setEnabled(bSSAO);
     post.createPass<ContrastPass>()->setEnabled(bContrast);
+    post.createPass<ZoomBlurPass>()->setEnabled(bZoom);
+
+    post.createPass<EdgePass>()->setEnabled(false);
+    post.createPass<EdgePass>()->setEnabled(false);
+
     
-    post.createPass<EdgePass>()->setEnabled(bEdge);
+ 
 
 
 
@@ -73,7 +78,7 @@ void ofApp::setup() {
     ofEnableDepthTest();
     ofDisableAlphaBlending();
 
-	ofSetFrameRate(60);
+	ofSetFrameRate(fps);
 	ofSetVerticalSync(true);
 
 	xMid = fullWidth / 2;
@@ -160,7 +165,7 @@ void ofApp::draw() {
 	//ofSetColor(200, 200, 200, 80);
     ofSetColor(255,255,255, 255);
 
-	relativeTimef = ofGetElapsedTimef() - timeCounter;
+	relativeTimef = (ofGetElapsedTimef() - timeCounter) * 0.8;
     
     
     recordFbo.begin();
@@ -190,14 +195,16 @@ void ofApp::draw() {
     int lSizeRight = linesRight.size();
     int lSizeLeft = linesLeft.size();
 
-    float grow = 40;
+    float grow = 70;
 
     ofNoFill();
     ofSetLineWidth(2);
+    ofEnableAntiAliasing();
+   // ofEnableSmoothing();
     ofSetCurveResolution(200);
 
     for (int i = 0; i < lSizeUp; i++) {
-        if (linesUp[i].d.y > 50) {
+        if (linesUp[i].d.y > 500) {
             linesUp[i].b.y -= grow;
             linesUp[i].c.y -= grow;
             linesUp[i].d.y -= grow;
@@ -224,7 +231,7 @@ void ofApp::draw() {
         drawFalconLR(linesRight[i], i, lSizeRight);
     }
     for (int i = 0; i < lSizeLeft; i++) {
-        if (linesLeft[i].d.x > 100) {
+        if (linesLeft[i].d.x > 1000) {
             linesLeft[i].b.x -= grow;
             linesLeft[i].c.x -= grow;
             linesLeft[i].d.x -= grow;
@@ -273,10 +280,10 @@ void ofApp::drawFalconLR(Line line, int idx, int number) {
 
     
     if(bRotate){
-	ofPoint aa = ofPoint(xMid, yMid + relativeTimef * 2.2);
-	ofPoint bb = ofPoint(line.b.x, line.b.y - relativeTimef * 10, sin(relativeTimef * 0.1) * 20);
-	ofPoint cc = ofPoint(line.c.x, line.c.y - relativeTimef * 0.5 * dir, sin(relativeTimef * 0.02) * 20 );
-	ofPoint dd = ofPoint(line.d.x + sin(relativeTimef * idx * 0.01 * sin(relativeTimef * 0.1)) * 200, line.d.y - relativeTimef * 1 * dir + sin(relativeTimef * 0.08) * 100, line.d.z + relativeTimef * abs(dir) * 1.1 + sin(relativeTimef * 0.2) * 80);
+	ofPoint aa = ofPoint(line.a.x, line.a.y + sin(relativeTimef * 0.02) * 300);
+	ofPoint bb = ofPoint(line.b.x, line.b.y + sin(relativeTimef * 0.01)*500 + relativeTimef * 0.2, sin(relativeTimef * 0.01) * 20);
+	ofPoint cc = ofPoint(line.c.x, line.c.y + relativeTimef * 0.05 * dir, sin(relativeTimef * 0.02) * 20 );
+	ofPoint dd = ofPoint(line.d.x + sin(relativeTimef * idx * 0.01 * sin(relativeTimef * 0.001)) * 200, line.d.y + relativeTimef * 0.04 *(-dir) + sin(relativeTimef * 0.08) * 200, line.d.z + relativeTimef * abs(dir) * 0.1 + sin(relativeTimef * 0.02)  * ofSignedNoise(relativeTimef*0.01)* 80);
 	ofDrawBezier(aa.x, aa.y, aa.z, bb.x, bb.y, bb.z, cc.x, cc.y - timeCounter, cc.z, dd.x, dd.y, dd.z);
     }
     else{
@@ -287,14 +294,15 @@ void ofApp::drawFalconLR(Line line, int idx, int number) {
 //--------------------------------------------------------------
 void ofApp::drawFalconUD(Line line, int idx, int number) {
 
-	float dir = (idx - number * 0.5);
+	float dir = (idx - number * 0.5) * 0.5;
+    //float dir = -idx;
 
     if(bRotate){
-        ofPoint aa = ofPoint(xMid, yMid + relativeTimef * 2.2, sin(relativeTimef * 1.2)*200);
+        ofPoint aa = ofPoint(line.a.x, line.a.y + relativeTimef * 2.2, sin(relativeTimef * 0.2)*200);
         ofPoint bb = ofPoint(line.b.x, line.b.y, sin(relativeTimef * 0.2)*200);
-        ofPoint cc = ofPoint(line.c.x, line.c.y - relativeTimef * 0.2 * abs(dir), sin(relativeTimef * 0.02) * 20);
+        ofPoint cc = ofPoint(line.c.x, line.c.y - relativeTimef * 0.08 * abs(dir), sin(relativeTimef * 0.02) * 20);
         ofPoint dd ;
-        dd = ofPoint(line.d.x - relativeTimef * 0.1 * dir + sin(relativeTimef * 0.01) * 20, line.d.y + sin(relativeTimef * idx * 0.005) * 100  , line.d.z - relativeTimef * dir * 0.1);
+        dd = ofPoint(line.d.x - relativeTimef * 0.1 * dir + sin(relativeTimef * 0.01) * 20, line.d.y + sin(relativeTimef * idx * 0.005) * 100  , line.d.z - relativeTimef * dir * 0.02);
         
         ofDrawBezier(aa.x, aa.y, aa.z, bb.x, bb.y, bb.z, cc.x, cc.y - timeCounter, cc.z, dd.x, dd.y, dd.z);
     }
