@@ -4,6 +4,7 @@
 #include "ofxPostProcessing.h"
 #include "ofxDOF.h"
 #include "ofxGui.h"
+#include "ofxVideoRecorder.h"
 
 
 class Line {
@@ -22,7 +23,7 @@ public:
 	void draw();
 	void drawFalconUD(Line line, int idx, int number);
 	void drawFalconLR(Line line, int idx, int number);
-
+    void exit();
 
 	void keyPressed(int key);
 	void keyReleased(int key);
@@ -68,10 +69,43 @@ public:
     
     
     // GUI ----------------------------
+    
     ofxPanel gui;
     ofxSlider<float> guiNoiseFreq;
     ofxSlider<float> guiNoiseAmplitude;
     ofxSlider<float> guiFocal;
     ofxSlider<float> guiSaturation;
+    
+    
+    
+    bool bFxaa = false;
+    bool bBloom = false;
+    bool bDof = false;
+    bool bNoise = false;
+    bool bEdge = false;
+    bool bTilt = false;
+    bool bGod = false;
+    bool bRgb = false;
+    bool bZoom = false;
+    bool bContrast = false;
+    bool bSSAO = false;
 
+    
+    /* Recording */
+    ofxVideoRecorder    vidRecorder;
+    bool                bRecording;
+    ofFbo               recordFbo;
+    ofFbo               recordFboFlip;
+    ofPixels            recordPixels;
+    string              fileName;
+    string              fileExt;
+    float               recordedFrame;
+    float               waitCounter     = 0;
+    bool                bPause = false;
+    bool                bEnd;
+    void recordingComplete(ofxVideoRecorderOutputFileCompleteEventArgs& args);
+    int fullWidth   = 3840;
+    int fullHeight  = 2160;
+    
+    
 };
